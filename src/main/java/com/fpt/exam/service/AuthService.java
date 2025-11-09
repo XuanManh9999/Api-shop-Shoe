@@ -42,6 +42,9 @@ public class AuthService {
     @Autowired
     private UserDetailsService userDetailsService;
 
+    @Autowired
+    private EmailService emailService;
+
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new BadRequestException("Email already exists");
@@ -142,6 +145,53 @@ public class AuthService {
         } catch (Exception e) {
             throw new UnauthorizedException("Invalid refresh token");
         }
+    }
+
+    public void forgotPassword(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("Email not found in the system"));
+
+        // Tạo mật khẩu mới ngẫu nhiên (8-12 ký tự)
+        String newPassword = generateRandomPassword();
+        
+        // Mã hóa và lưu mật khẩu mới vào database
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        // Gửi mật khẩu mới (chưa mã hóa) về email
+        emailService.sendPasswordResetEmail(user.getEmail(), newPassword);
+    }
+
+    private String generateRandomPassword() {
+        // Tạo mật khẩu ngẫu nhiên 10 ký tự: chữ hoa, chữ thường, số
+        String upperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String lowerCase = "abcdefghijklmnopqrstuvwxyz";
+        String numbers = "0123456789";
+        String allChars = upperCase + lowerCase + numbers;
+        
+        StringBuilder password = new StringBuilder();
+        java.util.Random random = new java.util.Random();
+        
+        // Đảm bảo có ít nhất 1 chữ hoa, 1 chữ thường, 1 số
+        password.append(upperCase.charAt(random.nextInt(upperCase.length())));
+        password.append(lowerCase.charAt(random.nextInt(lowerCase.length())));
+        password.append(numbers.charAt(random.nextInt(numbers.length())));
+        
+        // Thêm các ký tự ngẫu nhiên còn lại
+        for (int i = 3; i < 10; i++) {
+            password.append(allChars.charAt(random.nextInt(allChars.length())));
+        }
+        
+        // Xáo trộn các ký tự
+        char[] passwordArray = password.toString().toCharArray();
+        for (int i = passwordArray.length - 1; i > 0; i--) {
+            int j = random.nextInt(i + 1);
+            char temp = passwordArray[i];
+            passwordArray[i] = passwordArray[j];
+            passwordArray[j] = temp;
+        }
+        
+        return new String(passwordArray);
     }
 }
 

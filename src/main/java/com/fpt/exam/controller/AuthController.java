@@ -1,6 +1,11 @@
 package com.fpt.exam.controller;
 
-import com.fpt.exam.dto.*;
+import com.fpt.exam.dto.ApiResponse;
+import com.fpt.exam.dto.AuthResponse;
+import com.fpt.exam.dto.ForgotPasswordRequest;
+import com.fpt.exam.dto.LoginRequest;
+import com.fpt.exam.dto.RefreshTokenRequest;
+import com.fpt.exam.dto.RegisterRequest;
 import com.fpt.exam.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +49,20 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(401)
                     .body(ApiResponse.error("Token refresh failed: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        try {
+            authService.forgotPassword(request.getEmail());
+            return ResponseEntity.ok(ApiResponse.success(
+                    "Password reset email has been sent. Please check your email for the new password.",
+                    null
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Failed to reset password: " + e.getMessage()));
         }
     }
 }
