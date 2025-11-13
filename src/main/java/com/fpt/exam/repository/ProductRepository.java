@@ -25,4 +25,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Product> searchProducts(@Param("keyword") String keyword, 
                                   @Param("categoryId") Long categoryId, 
                                   Pageable pageable);
+    
+    // Statistics queries
+    @Query("SELECT p.category.categoryId, p.category.name, COUNT(p) " +
+           "FROM Product p " +
+           "WHERE p.category IS NOT NULL " +
+           "GROUP BY p.category.categoryId, p.category.name")
+    List<Object[]> getProductCountByCategory();
 }
